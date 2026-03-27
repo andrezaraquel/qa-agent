@@ -14,7 +14,7 @@ test.describe('Intentional failures — QA Agent trigger', () => {
     await expect(page.getByRole('heading', { name: 'Welcome to my store' })).toBeVisible({ timeout: 3000 });
   });
 
-  test('should navigate to a page that returns 404', async ({ page }) => {
+  test('should navigate to a page that  returns 404', async ({ page }) => {
     const response = await page.goto('https://example.com/this-page-does-not-exist');
     // Expects 200 but will get 404
     expect(response?.status()).toBe(200);
