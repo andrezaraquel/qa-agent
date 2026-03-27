@@ -5,14 +5,14 @@ import anthropic
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-# --- Ferramentas ---
+# --- Tools ---
 
-def ler_resultados_playwright(caminho: str) -> dict:
-    """Lê o arquivo JSON de resultados do Playwright e retorna um resumo."""
-    if not os.path.exists(caminho):
-        return {"erro": f"Arquivo não encontrado: {caminho}"}
+def read_playwright_results(path: str) -> dict:
+    """Reads the Playwright JSON results file and returns a summary."""
+    if not os.path.exists(path):
+        return {"error": f"File not found: {path}"}
 
-    with open(caminho) as f:
+    with open(path) as f:
         results = json.load(f)
 
     total = results.get("stats", {})
@@ -23,36 +23,36 @@ def ler_resultados_playwright(caminho: str) -> dict:
     ]
     return {
         "total": total,
-        "falhas": [t["title"] for t in failed[:10]]
+        "failed_tests": [t["title"] for t in failed[:10]]
     }
 
 
-def postar_comentario_pr(comentario: str) -> str:
-    """Posta um comentário em um PR do GitHub."""
+def post_pr_comment(comment: str) -> str:
+    """Posts a comment on a GitHub PR."""
     token = os.getenv("GH_TOKEN")
     repo  = os.getenv("GITHUB_REPO")
     pr    = os.getenv("PR_NUMBER")
 
     if not all([token, repo, pr]):
-        return "Erro: variáveis GH_TOKEN, GITHUB_REPO ou PR_NUMBER não definidas."
+        return "Error: GH_TOKEN, GITHUB_REPO or PR_NUMBER environment variables are not set."
 
     url  = f"https://api.github.com/repos/{repo}/issues/{pr}/comments"
     resp = requests.post(
         url,
-        json={"body": comentario},
+        json={"body": comment},
         headers={"Authorization": f"Bearer {token}"}
     )
-    return "Comentario postado!" if resp.status_code == 201 else f"Erro: {resp.status_code} - {resp.text}"
+    return "Comment posted!" if resp.status_code == 201 else f"Error: {resp.status_code} - {resp.text}"
 
 
-# --- Agente 1: Analista ---
+# --- Agent 1: Analyst ---
 
-def analisar_resultados(arquivo: str) -> str:
-    """Usa Claude para analisar os resultados dos testes."""
-    dados = ler_resultados_playwright(arquivo)
+def analyze_results(file_path: str) -> str:
+    """Uses Claude to analyze test results."""
+    data = read_playwright_results(file_path)
 
-    if "erro" in dados:
-        return f"Erro ao ler arquivo: {dados['erro']}"
+    if "error" in data:
+        return f"Failed to read file: {data['error']}"
 
     prompt = f"""You are a senior QA engineer with 10 years of experience.
 Analyze the following Playwright test results and identify:
@@ -62,9 +62,9 @@ Analyze the following Playwright test results and identify:
 - Severity level (low / medium / high / critical)
 
 Test results:
-{json.dumps(dados, indent=2)}
+{json.dumps(data, indent=2)}
 
-Respond with a structured JSON containing: total, passed, failed, severidade, falhas, padroes.
+Respond with a structured JSON containing: total, passed, failed, severity, failures, patterns.
 """
 
     response = client.messages.create(
@@ -76,10 +76,10 @@ Respond with a structured JSON containing: total, passed, failed, severidade, fa
     return response.content[0].text
 
 
-# --- Agente 2: Redator ---
+# --- Agent 2: Writer ---
 
-def gerar_e_postar_relatorio(analise: str) -> str:
-    """Usa Claude para transformar a análise em comentário de PR e posta no GitHub."""
+def generate_and_post_report(analysis: str) -> str:
+    """Uses Claude to turn the analysis into a PR comment and posts it to GitHub."""
 
     prompt = f"""You are a technical writer who creates clear reports for developers and product managers.
 Based on the QA analysis below, write a professional GitHub PR comment in markdown.
@@ -91,7 +91,7 @@ The comment should include:
 - A suggested next step
 
 QA Analysis:
-{analise}
+{analysis}
 
 Write only the markdown comment, nothing else.
 """
@@ -102,24 +102,24 @@ Write only the markdown comment, nothing else.
         messages=[{"role": "user", "content": prompt}]
     )
 
-    comentario = response.content[0].text
-    print("\n--- Comentário gerado ---")
-    print(comentario)
-    print("------------------------\n")
+    comment = response.content[0].text
+    print("\n--- Generated comment ---")
+    print(comment)
+    print("-------------------------\n")
 
-    return postar_comentario_pr(comentario)
+    return post_pr_comment(comment)
 
 
-# --- Execução principal ---
+# --- Main execution ---
 
 if __name__ == "__main__":
-    arquivo = "playwright-report/results.json"
+    file_path = "playwright-report/results.json"
 
-    print("🔍 Analisando resultados dos testes...")
-    analise = analisar_resultados(arquivo)
-    print("Análise concluída.")
-    print(analise)
+    print("🔍 Analyzing test results...")
+    analysis = analyze_results(file_path)
+    print("Analysis complete.")
+    print(analysis)
 
-    print("\n📝 Gerando e postando relatório no PR...")
-    resultado = gerar_e_postar_relatorio(analise)
-    print(resultado)
+    print("\n📝 Generating and posting report to PR...")
+    result = generate_and_post_report(analysis)
+    print(result)
