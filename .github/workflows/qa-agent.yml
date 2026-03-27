@@ -1,18 +1,18 @@
-# .github/workflows/qa-agent.yml
 name: QA Agent Report
+
 on:
   workflow_run:
     workflows: ["Playwright Tests"]
     types: [completed]
 
-
 jobs:
   agent:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Download test results
         uses: actions/download-artifact@v4
@@ -22,13 +22,20 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GH_TOKEN }}
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
+      - name: Install dependencies
+        run: pip install anthropic requests python-dotenv
 
-
-      - run: pip install crewai langchain-anthropic requests
-
+      - name: Debug
+        run: |
+          echo "=== main.py content ==="
+          cat qa_agent/main.py
+          echo "=== installed packages ==="
+          pip list | grep -E "crewai|langchain|anthropic"
 
       - name: Run QA Agent
         run: python qa_agent/main.py
