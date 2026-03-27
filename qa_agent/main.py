@@ -65,7 +65,7 @@ tarefa_analise = Task(
         "Leia o arquivo em '{arquivo}' e identifique: "  # ← usa o input corretamente
         "total de testes, falhas críticas, padrões de erro."
     ),
-    expected_output="JSON com: total, falhas, severidade, padrões identificados",
+    expected_output="JSON com : total, falhas, severidade, padrões identificados",
     agent=analista
 )
 
