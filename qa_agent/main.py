@@ -96,8 +96,8 @@ QA Analysis:
 Write only the markdown comment, nothing else.
 """
 
-    response = client.messages.create(
-        model="claude-opus-4-5",
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}]
     )
