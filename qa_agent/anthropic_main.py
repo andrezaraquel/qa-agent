@@ -1,9 +1,9 @@
 import json
 import os
 import requests
-from groq import Groq
+import anthropic
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # --- Tools ---
 
@@ -67,8 +67,8 @@ Test results:
 Respond with a structured JSON containing: total, passed, failed, severity, failures, patterns.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+    response = client.messages.create(
+        model="claude-opus-4-5",
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}]
     )
