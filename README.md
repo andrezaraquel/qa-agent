@@ -1,6 +1,6 @@
 # 🤖 QA Agent — Automated Test Analysis with AI
 
-An intelligent QA agent that automatically analyzes Playwright test failures and posts detailed reports as GitHub PR comments — powered by Claude and CrewAI.
+An intelligent QA agent that automatically analyzes Playwright test failures and posts detailed reports as GitHub PR comments — powered by an LLM of your choice and direct API integration.
 
 ---
 
@@ -25,13 +25,35 @@ Two AI agents collaborate in sequence:
 
 ---
 
+## Choosing your LLM
+
+This project supports two LLM backends. Choose the one that fits your setup:
+
+| File | Model | Requires | Cost |
+|---|---|---|---|
+| `main.py` | LLaMA 3.3 70B via [Groq](https://groq.com) | `GROQ_API_KEY` | Free tier available |
+| `anthropic_main.py` | Claude via [Anthropic](https://anthropic.com) | `ANTHROPIC_API_KEY` | Paid (credits required) |
+
+**Use `main.py` (Groq)** if you want to get started for free without a credit card.
+
+**Use `anthropic_main.py`** if you already have Anthropic credits and want Claude's stronger reasoning for complex test reports. Note that the Anthropic API requires a paid plan — a free API key alone is not enough to make calls.
+
+To switch, update the `run` command in `qa-agent.yml`:
+
+```yaml
+run: python qa_agent/main.py            # Groq (default)
+# run: python qa_agent/anthropic_main.py  # Anthropic (paid)
+```
+
+---
+
 ## Tech stack
 
 | Layer | Tool |
 |---|---|
 | Test runner | [Playwright](https://playwright.dev) |
-| Agent framework | [CrewAI](https://crewai.com) |
-| LLM | [Claude](https://anthropic.com) via `langchain-anthropic` |
+| LLM (default) | [LLaMA 3.3 70B](https://groq.com) via Groq |
+| LLM (alternative) | [Claude](https://anthropic.com) via Anthropic |
 | CI/CD | GitHub Actions |
 
 ---
@@ -42,15 +64,16 @@ Two AI agents collaborate in sequence:
 .
 ├── .github/
 │   └── workflows/
-│       ├── playwright.yml      # runs tests on push/PR
-│       └── qa-agent.yml        # triggers on test failure
+│       ├── playwright.yml          # runs tests on push/PR
+│       └── qa-agent.yml            # triggers on test failure
 ├── qa_agent/
-│   └── main.py                 # agent definition and execution
+│   ├── main.py                     # agent using Groq (free)
+│   └── anthropic_main.py           # agent using Anthropic (paid)
 ├── tests/
-│   └── example.spec.ts         # Playwright test specs
+│   └── example.spec.ts             # Playwright test specs
 ├── playwright.config.ts
 ├── requirements.txt
-└── .env                        # local only — never commit
+└── .env                            # local only — never commit
 ```
 
 ---
@@ -74,8 +97,17 @@ npx playwright install --with-deps
 
 ### 2. Configure environment variables
 
-Create a `.env` file at the root:
+Create a `.env` file at the root.
 
+**Using Groq (default):**
+```env
+GROQ_API_KEY=gsk_...
+GH_TOKEN=ghp_...
+GITHUB_REPO=your-org/your-repo
+PR_NUMBER=123
+```
+
+**Using Anthropic:**
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
 GH_TOKEN=ghp_...
@@ -86,6 +118,15 @@ PR_NUMBER=123
 ### 3. Add GitHub Secrets
 
 Go to your repository → **Settings → Security → Secrets and variables → Actions** and add:
+
+**Using Groq (default):**
+
+| Secret | Value |
+|---|---|
+| `GROQ_API_KEY` | Your Groq API key |
+| `GH_TOKEN` | Your GitHub Personal Access Token |
+
+**Using Anthropic:**
 
 | Secret | Value |
 |---|---|
@@ -101,7 +142,8 @@ Go to your repository → **Settings → Security → Secrets and variables → 
 npx playwright test
 
 # Run the QA agent manually (after tests generate a report)
-python qa_agent/main.py
+python qa_agent/main.py             # Groq
+python qa_agent/anthropic_main.py   # Anthropic
 ```
 
 ---
@@ -134,3 +176,7 @@ push to main/PR → Playwright Tests
 > **Suggested next step:** Check the `AuthForm` and `PaymentField` components for removed or renamed attributes.
 
 ---
+
+## License
+
+MIT
