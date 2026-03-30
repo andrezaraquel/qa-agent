@@ -73,7 +73,7 @@ Respond with a structured JSON containing: total, passed, failed, severity, fail
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return response.content[0].text
+    return response.choices[0].message.content
 
 
 # --- Agent 2: Writer ---
@@ -102,7 +102,7 @@ Write only the markdown comment, nothing else.
         messages=[{"role": "user", "content": prompt}]
     )
 
-    comment = response.content[0].text
+    comment = response.choices[0].message.content
     print("\n--- Generated comment ---")
     print(comment)
     print("-------------------------\n")
